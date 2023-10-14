@@ -91,7 +91,7 @@ config :ueberauth, Ueberauth,
 
 ## Copyright and License
 
-Copyright (c) 2023 Felix Penzlin
-Copyright (c) 2015 Sean Callan
-
+Copyright (c) 2023 Felix Penzlin  
+Copyright (c) 2015 Sean Callan  
+  
 Released under the MIT License, which can be found in the repository in [LICENSE](https://github.com/FelixPe/ueberauth_atlassian/blob/master/LICENSE).
