@@ -1,12 +1,16 @@
 defmodule UeberauthAtlassian.MixProject do
   use Mix.Project
 
+  @source_url "https://github.com/FelixPe/ueberauth_atlassian"
+  @version "0.1.0"
+
   def project do
     [
       app: :ueberauth_atlassian,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
+      package: package(),
       deps: deps()
     ]
   end
@@ -25,6 +29,19 @@ defmodule UeberauthAtlassian.MixProject do
       {:oauth2, "~> 2.1.0"}
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
+    ]
+  end
+
+  defp package do
+    [
+      name: "ueberauth_atlassian",
+      description: "An Uberauth strategy for Atlassian authentication.",
+      files: ["lib", "mix.exs", "README.md", "LICENSE"],
+      maintainers: ["Felix Penzlin"],
+      licenses: ["MIT"],
+      links: %{
+        GitHub: @source_url
+      }
     ]
   end
 end
