@@ -1,4 +1,93 @@
 defmodule Ueberauth.Strategy.Atlassian do
+@moduledoc """
+## Installation
+
+1.  Setup your application at [Atlassian Developer Console](https://developer.atlassian.com/console/myapps/).
+
+2.  Add `:ueberauth_atlassian` to your list of dependencies in `mix.exs`:
+
+    ```elixir
+    def deps do
+      [
+        {:ueberauth_atlassian, "~> 0.1.0"}
+      ]
+    end
+    ```
+
+3.  Add Atlassian to your Überauth configuration:
+
+    ```elixir
+    config :ueberauth, Ueberauth,
+      providers: [
+        atlassian: {Ueberauth.Strategy.Atlassian, []}
+      ]
+    ```
+
+4.  Update your provider configuration:
+
+    Use that if you want to read client ID/secret from the environment
+    variables in the compile time:
+
+    ```elixir
+    config :ueberauth, Ueberauth.Strategy.Atlassian.OAuth,
+      client_id: System.get_env("ATLASSIAN_CLIENT_ID"),
+      client_secret: System.get_env("ATLASSIAN_CLIENT_SECRET")
+    ```
+
+    Use that if you want to read client ID/secret from the environment
+    variables in the run time:
+
+    ```elixir
+    config :ueberauth, Ueberauth.Strategy.Atlassian.OAuth,
+      client_id: {System, :get_env, ["ATLASSIAN_CLIENT_ID"]},
+      client_secret: {System, :get_env, ["ATLASSIAN_CLIENT_SECRET"]}
+    ```
+
+5.  Include the Überauth plug in your controller:
+
+    ```elixir
+    defmodule MyApp.AuthController do
+      use MyApp.Web, :controller
+      plug Ueberauth
+      ...
+    end
+    ```
+
+6.  Create the request and callback routes if you haven't already:
+
+    ```elixir
+    scope "/auth", MyApp do
+      pipe_through :browser
+
+      get "/:provider", AuthController, :request
+      get "/:provider/callback", AuthController, :callback
+    end
+    ```
+
+7.  Your controller needs to implement callbacks to deal with `Ueberauth.Auth` and `Ueberauth.Failure` responses.
+
+For an example implementation see the [Überauth Example](https://github.com/ueberauth/ueberauth_example) application.
+
+## Calling
+
+Depending on the configured url you can initiate the request through:
+
+    /auth/atlassian
+
+Or with options:
+
+    /auth/atlassian?scope=read%3Ame%20read%3Ajira-work
+
+By default the requested scope is "read:me offline_access". Scope can be configured either explicitly as a `scope` query value on the request path or in your configuration:
+
+```elixir
+config :ueberauth, Ueberauth,
+  providers: [
+    atlassian: {Ueberauth.Strategy.Atlassian, [default_scope: "read:me offline_access"]}
+  ]
+```
+"""
+
   use Ueberauth.Strategy,
     default_scope: "read:me offline_access",
     userinfo_endpoint: "https://api.atlassian.com/me",
@@ -11,6 +100,10 @@ defmodule Ueberauth.Strategy.Atlassian do
     alias Ueberauth.Auth.Info
     alias Ueberauth.Auth.Extra
 
+    @doc """
+    This function will be called by your auth controller request handler.
+    It forwards the user to Atlassian for authentication in return it passes back a code to the callback.
+    """
     def handle_request!(conn) do
       scopes = conn.params["scope"] || option(conn, :default_scope)
       response_type = option(conn, :response_type)
@@ -26,8 +119,11 @@ defmodule Ueberauth.Strategy.Atlassian do
       redirect!(conn, apply(module, :authorize_url!, [params, opts]))
     end
 
-    # ///////// ----------- New function here --------------
-    # This function will be called before our auth controller request handler
+    @doc """
+    This function will be called by your auth controller callback handler.
+    The user is forwarded to the callback after authentication on Atlassian.
+    The function retrieves the access token and fetches the user details.
+    """
     def handle_callback!(%Plug.Conn{params: %{"code" => code}} = conn) do
 
       # Uses our oauth module to perform the token fetch
@@ -42,12 +138,15 @@ defmodule Ueberauth.Strategy.Atlassian do
           set_errors!(conn, [error(error_code, error_description)])
       end
     end
-    # ///////// ----------- New function here --------------
+
+
     def handle_callback!(conn) do
       set_errors!(conn, [error("missing_code", "No code received")])
     end
 
-    # ///////// ----------- New function here --------------
+    @doc """
+    Cleanup user information on logout.
+    """
     def handle_cleanup!(conn) do
       conn
       |> put_private(:atlassian_user, nil)
@@ -66,7 +165,9 @@ defmodule Ueberauth.Strategy.Atlassian do
       conn.private.atlassian_user[uid_field]
     end
 
-    # Gets called after handle_callback! to set the credentials struct with the token information
+    @doc """
+    Gets called after handle_callback! to set the credentials struct with the token information
+    """
     def credentials(conn) do
       token = conn.private.atlassian_token
       scope_string = token.other_params["scope"] || ""

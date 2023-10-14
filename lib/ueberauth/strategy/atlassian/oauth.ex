@@ -14,6 +14,9 @@ defmodule Ueberauth.Strategy.Atlassian.OAuth do
       token_method: :post
     ]
 
+    @doc """
+    Create a preconfigured OAuth2.Client
+    """
     def client(opts \\ []) do
       # This is where we grab the Client ID and Client Secret we created earilier
       config =
@@ -38,6 +41,9 @@ defmodule Ueberauth.Strategy.Atlassian.OAuth do
       |> OAuth2.Client.authorize_url!(params)
     end
 
+    @doc """
+    Access a url authenticating with the given token
+    """
     def get(token, url, headers \\ [], opts \\ []) do
       [token: token]
       |> client
@@ -50,11 +56,11 @@ defmodule Ueberauth.Strategy.Atlassian.OAuth do
     end
 
     @doc """
-    Retrieves an access token by calling auth.atlassian.com or returns an error
+    Retrieves an access token by calling https://auth.atlassian.com or returns an error
 
-        curl --request POST \
-        --url 'https://auth.atlassian.com/oauth/token' \
-        --header 'Content-Type: application/json' \
+        curl --request POST
+        --url 'https://auth.atlassian.com/oauth/token'
+        --header 'Content-Type: application/json'
         --data '{"grant_type": "authorization_code",
           "client_id": "YOUR_CLIENT_ID",
           "client_secret": "YOUR_CLIENT_SECRET",
