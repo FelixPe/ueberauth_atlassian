@@ -58,6 +58,7 @@ defmodule Ueberauth.Strategy.Atlassian.OAuth do
     @doc """
     Retrieves an access token by calling https://auth.atlassian.com or returns an error
 
+        ```
         curl --request POST
         --url 'https://auth.atlassian.com/oauth/token'
         --header 'Content-Type: application/json'
@@ -66,6 +67,7 @@ defmodule Ueberauth.Strategy.Atlassian.OAuth do
           "client_secret": "YOUR_CLIENT_SECRET",
           "code": "YOUR_AUTHORIZATION_CODE",
           "redirect_uri": "https://YOUR_APP_CALLBACK_URL"}'
+        ```
     """
     def get_access_token(params \\ [], opts \\ []) do
       maybe_a_client =
@@ -92,6 +94,47 @@ defmodule Ueberauth.Strategy.Atlassian.OAuth do
       end
     end
 
+    @doc """
+    Exchange your refresh token for a new access token.
+    ```
+    curl --request POST
+      --url 'https://auth.atlassian.com/oauth/token'
+      --header 'Content-Type: application/json'
+      --data '{ "grant_type": "refresh_token",
+                "client_id": "YOUR_CLIENT_ID",
+                "client_secret": "YOUR_CLIENT_SECRET",
+                "refresh_token": "YOUR_REFRESH_TOKEN" }'
+    ```
+    """
+    def refresh_access_token(refresh_token) when is_binary(refresh_token) do
+      client = client()
+
+      maybe_a_client =
+        %{client | token: %{refresh_token: refresh_token}}
+        |> put_header("Accept", "application/json")
+        |> put_param("client_id", client.client_id)
+        |> put_param("client_secret", client.client_secret)
+        |> OAuth2.Client.refresh_token([], [{"content-type", "application/json"}], [])
+
+      case maybe_a_client do
+          {:error, %OAuth2.Response{body: %{"error" => error}} = response} ->
+            description = Map.get(response.body, "error_description", "")
+            {:error, {error, description}}
+
+          {:error, %OAuth2.Error{reason: reason}} ->
+            {:error, {"error", to_string(reason)}}
+
+          {:ok, %OAuth2.Client{token: %{access_token: nil} = token}} ->
+            %{"error" => error, "error_description" => description} = token.other_params
+            {:error, {error, description}}
+
+          {:ok, %OAuth2.Client{token: token}} ->
+            {:ok, token}
+      end
+
+    end
+
+    @spec get_token(OAuth2.Client.t(), keyword(), [{binary(), binary()}]) :: OAuth2.Client.t()
     def get_token(client, params, headers) do
       client
       |> put_param("client_secret", client.client_secret)

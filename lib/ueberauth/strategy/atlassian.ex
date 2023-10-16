@@ -139,10 +139,26 @@ config :ueberauth, Ueberauth,
       end
     end
 
-
     def handle_callback!(conn) do
       set_errors!(conn, [error("missing_code", "No code received")])
     end
+
+    @doc """
+    The function retrieves exchanges a refresh token for an access token.
+    """
+    def handle_refresh!(conn, refresh_token) do
+
+      # Uses our oauth module to perform the token fetch
+      module = option(conn, :oauth2_module)
+
+      case apply(module, :refresh_access_token, [refresh_token]) do
+        {:ok, token} ->
+          fetch_user(conn, token)
+        {:error, {error_code, error_description}} ->
+          set_errors!(conn, [error(error_code, error_description)])
+      end
+    end
+
 
     @doc """
     Cleanup user information on logout.
