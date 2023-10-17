@@ -2,7 +2,7 @@ defmodule UeberauthAtlassian.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/FelixPe/ueberauth_atlassian"
-  @version "0.3.0"
+  @version "0.4.0"
 
   def project do
     [
