@@ -25,7 +25,7 @@ defmodule UeberauthAtlassian.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ueberauth, "~> 0.7.0"},
+      {:ueberauth, "~> 0.10.5"},
       {:oauth2, "~> 2.1.0"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
