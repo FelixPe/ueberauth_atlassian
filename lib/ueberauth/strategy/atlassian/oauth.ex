@@ -73,9 +73,7 @@ defmodule Ueberauth.Strategy.Atlassian.OAuth do
       maybe_a_client =
         opts
         |> client
-        |> put_header("Accept", "application/json")
-        |> put_header("content-type", "application/json")
-        |> OAuth2.Client.get_token(params)
+        |> OAuth2.Client.get_token(params, [{"Accept", "application/json"}, {"content-type", "application/json"}])
 
       case maybe_a_client do
         {:error, %OAuth2.Response{body: %{"error" => error}} = response} ->
@@ -134,7 +132,6 @@ defmodule Ueberauth.Strategy.Atlassian.OAuth do
 
     end
 
-    @spec get_token(OAuth2.Client.t(), keyword(), [{binary(), binary()}]) :: OAuth2.Client.t()
     def get_token(client, params, headers) do
       client
       |> put_param("client_secret", client.client_secret)
